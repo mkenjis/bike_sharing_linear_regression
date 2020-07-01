@@ -1,6 +1,4 @@
-val dfraw = sc.textFile("bike/hour_nohead.csv").map(x => x.split(","))
-
-val rdd = dfraw.map(x => Array(x(2),x(4),x(5),x(6),x(7),x(8),x(9),x(10),x(11),x(12),x(13),x(16)))
+val rdd = sc.textFile("bike/hour_nohead.csv").map(x => x.split(","))
 
 def oneHotEncColumns(rddx: org.apache.spark.rdd.RDD[Array[String]], idx: Int):org.apache.spark.rdd.RDD[Array[Double]] = {
   val categories = rddx.map(r => r(idx)).distinct.zipWithIndex.collect.toMap
@@ -25,10 +23,9 @@ def mergeArray(rddx: org.apache.spark.rdd.RDD[Array[String]], idx: Int*):org.apa
   arr1
 }
 
-val concat = mergeArray(rdd,0,1,2,3,4,5,6)
-val concat = mergeArray(rdd,0,2,3,4,5,6)
+val concat = mergeArray(rdd,2,5,7,9)
 
-val rdd1 = rdd.map(x => Array(x(11).toDouble,x(7).toDouble,x(8).toDouble,x(9).toDouble,x(10).toDouble))
+val rdd1 = rdd.map(x => Array(x(16).toDouble,x(6).toDouble,x(8).toDouble,x(10).toDouble,x(11).toDouble,x(12).toDouble,x(13).toDouble))
 
 val vect = rdd1.zip(concat).map(x => (x._1.toList ++ x._2.toList).toArray)
 
@@ -37,7 +34,7 @@ import org.apache.spark.mllib.regression.LabeledPoint
 
 val data = vect.map(r => {
    val label = r(0).toDouble
-   val features = r.slice(1, r.size)
+   val features = r.slice(1, r.size-1)
    LabeledPoint(label, Vectors.dense(features))
  })
 
@@ -74,7 +71,7 @@ validMetrics.meanSquaredError
 import java.lang.Math._
 val data = vect.map(r => {
    val label = Math.log(r(0).toDouble)
-   val features = r.slice(1, r.size)
+   val features = r.slice(1, r.size-1)
    LabeledPoint(label, Vectors.dense(features))
  })
 
