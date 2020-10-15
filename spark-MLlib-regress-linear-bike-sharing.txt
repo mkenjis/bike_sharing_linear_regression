@@ -5,7 +5,7 @@ val rdd = sc.textFile("bike/hour.csv").filter( x => ! x.contains("instant")).map
 rdd.take(5)
 res2: Array[Array[String]] = Array(Array(1, 2011-01-01, 1, 0, 1, 0, 0, 6, 0, 1, 0.24, 0.2879, 0.81, 0, 3, 13, 16), Array(2, 2011-01-01, 1, 0, 1, 1, 0, 6, 0, 1, 0.22, 0.2727, 0.8, 0, 8, 32, 40), Array(3, 2011-01-01, 1, 0, 1, 2, 0, 6, 0, 1, 0.22, 0.2727, 0.8, 0, 5, 27, 32), Array(4, 2011-01-01, 1, 0, 1, 3, 0, 6, 0, 1, 0.24, 0.2879, 0.75, 0, 3, 10, 13), Array(5, 2011-01-01, 1, 0, 1, 4, 0, 6, 0, 1, 0.24, 0.2879, 0.75, 0, 0, 1, 1))
 
----- Convert season(2), hr(5), weekday(7), weathersit(9) as 1-to-k binary encoding vectors 
+---- Convert season(rdd(2)), hr(rdd(5)), weekday(rdd(7)), weathersit(rdd(9)) as 1-to-k binary encoding vectors 
 
 def oneHotEncColumns(rddx: org.apache.spark.rdd.RDD[Array[String]], idx: Int):org.apache.spark.rdd.RDD[Array[Double]] = {
   val categories = rddx.map(r => r(idx)).distinct.zipWithIndex.collect.toMap
@@ -69,12 +69,58 @@ model: intercept = 78.71448830815403, numFeatures = 44
 val validPredicts = testSet.map(x => (model.predict(x.features),x.label))
 
 validPredicts.take(10)
-res8: Array[(Double, Double)] = Array((110.99490216859101,36.0), (190.0118184150961,93.0), (210.6791875985857,35.0), (132.32924103761815,36.0), (98.16146303503986,34.0), (61.888287757568676,39.0), (141.26862663721994,93.0), (132.808474285326,75.0), (277.47874966333006,53.0), (100.82068432776525,31.0))
+res4: Array[(Double, Double)] = Array((-19.356637666293082,1.0), (95.15992685749136,3.0), (114.9075918136643,36.0), (163.79898804547366,110.0), (101.94533093765051,34.0), (1.8577434869092002,2.0), (134.29346872641332,1.0), (207.53360161943473,30.0), (149.983317324417,22.0), (98.1977791856946,31.0))
 
 import org.apache.spark.mllib.evaluation.RegressionMetrics
 val validMetrics = new RegressionMetrics(validPredicts)
-validMetrics.rootMeanSquaredError   // 115.46666623231461
-validMetrics.meanSquaredError       // 13332.551010804742
+validMetrics.rootMeanSquaredError   // 115.36357398371739
+validMetrics.meanSquaredError       // 13308.754202296634
+
+---- Analyzing statistics for standardization ---------------------
+
+import org.apache.spark.mllib.linalg.Matrix
+import org.apache.spark.mllib.linalg.distributed.RowMatrix
+
+val vectors = data.map{ case LabeledPoint(x,y) => y }
+val matrix = new RowMatrix(vectors)
+val matrixSummary = matrix.computeColumnSummaryStatistics()
+
+matrixSummary.max
+res7: org.apache.spark.mllib.linalg.Vector = [1.0,1.0,1.0,1.0,1.0,0.8507,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+
+matrixSummary.min
+res8: org.apache.spark.mllib.linalg.Vector = [0.0,0.0,0.02,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+
+matrixSummary.mean
+res9: org.apache.spark.mllib.linalg.Vector = [0.028770355026181024,0.6827205247712756,0.4969871684216565,0.47577510213476043,0.6272288394038795,0.19009760630646091,0.24351228494159619,0.25369699062086426,0.25870303239541975,0.2440876920421198,0.04010587490649634,0.04183209620806721,0.04194717762817193,0.04188963691811957,0.04188963691811957,0.04188963691811957,0.04183209620806721,0.04194717762817193,0.041256689107543584,0.04188963691811957,0.041717014787962484,0.04177455549801484,0.041141607687438866,0.04200471833822429,0.04183209620806721,0.04010587490649634,0.04188963691811957,0.04200471833822429,0.04188963691811957,0.04194717762817193,0.041659474077910125,0.04183209620806721,0.04183209620806721,0.04188963691811957,0.14218309453938663,0.1431037459002244,0.14454226365153347,0.143966856...
+
+matrixSummary.variance
+res10: org.apache.spark.mllib.linalg.Vector = [0.027944229628663223,0.216625674622443,0.03707785983073765,0.029532496613919268,0.03722192087154383,0.014967131527242529,0.1842246524414297,0.1893457226581085,0.1917868089740012,0.18451950801918102,0.03849960899931937,0.040084478424256824,0.04018992447399371,0.0401372047602491,0.0401372047602491,0.0401372047602491,0.040084478424256824,0.04018992447399371,0.039556850840711894,0.0401372047602491,0.039979005885529245,0.04003174546601687,0.0394512458570308,0.04024263756549064,0.040084478424256824,0.03849960899931937,0.0401372047602491,0.04024263756549064,0.0401372047602491,0.04018992447399371,0.03992625968279394,0.040084478424256824,0.040084478424256824,0.0401372047602491,0.12197408064179857,0.122632120148817,0.1236569129765996,0.12324749251406...
+
+---- Apply standardization to dataset -------------------------------
+
+import org.apache.spark.mllib.feature.StandardScaler
+val scaler = new StandardScaler(true, false).fit(trainSet.map(x => x.features))
+ 
+val trainScaled = trainSet.map(x => LabeledPoint(x.label,scaler.transform(x.features)))
+
+---- MLlib Linear regression --------------
+---- Rejected due to NEGATIVE predictions 
+
+import org.apache.spark.mllib.regression.LinearRegressionWithSGD
+val alg = new LinearRegressionWithSGD()
+alg.setIntercept(true)
+alg.optimizer.setNumIterations(200)
+
+alg.optimizer.setStepSize(1.0)
+val model = alg.run(trainScaled)
+model: intercept = 189.20104757121348, numFeatures = 44
+
+val validPredicts = testSet.map(x => (model.predict(scaler.transform(x.features)),x.label))
+
+validPredicts.take(10)
+res15: Array[(Double, Double)] = Array((-21.199721380726515,1.0), (91.65128131516427,3.0), (103.902773703906,36.0), (151.9874782206591,110.0), (90.88596574049667,34.0), (-6.798132508469138,2.0), (126.28077281341028,1.0), (205.5934282006404,30.0), (150.77031052474302,22.0), (100.18939818287623,31.0))
+
 
 ------- Transforming the label data --------------
 
