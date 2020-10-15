@@ -1,5 +1,7 @@
 # bike_sharing_linear_regression
 bike sharing using MLlib linear regression
+- Source : UCI Machine Learning Repository 
+- URL : http://archive.ics.uci.edu/ml/datasets/Bike+Sharing+Dataset
 
 # Purpose: 
 - use bike sharing dataset to train different linear regression models.
