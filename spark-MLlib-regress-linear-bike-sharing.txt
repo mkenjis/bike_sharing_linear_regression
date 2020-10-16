@@ -5,7 +5,7 @@ val rdd = sc.textFile("bike/hour.csv").filter( x => ! x.contains("instant")).map
 rdd.take(5)
 res2: Array[Array[String]] = Array(Array(1, 2011-01-01, 1, 0, 1, 0, 0, 6, 0, 1, 0.24, 0.2879, 0.81, 0, 3, 13, 16), Array(2, 2011-01-01, 1, 0, 1, 1, 0, 6, 0, 1, 0.22, 0.2727, 0.8, 0, 8, 32, 40), Array(3, 2011-01-01, 1, 0, 1, 2, 0, 6, 0, 1, 0.22, 0.2727, 0.8, 0, 5, 27, 32), Array(4, 2011-01-01, 1, 0, 1, 3, 0, 6, 0, 1, 0.24, 0.2879, 0.75, 0, 3, 10, 13), Array(5, 2011-01-01, 1, 0, 1, 4, 0, 6, 0, 1, 0.24, 0.2879, 0.75, 0, 0, 1, 1))
 
----- Convert season(rdd(2)), hr(rdd(5)), weekday(rdd(7)), weathersit(rdd(9)) as 1-to-k binary encoding vectors 
+---- Conversion to 1-to-k binary encoding vectors 
 
 def oneHotEncColumns(rddx: org.apache.spark.rdd.RDD[Array[String]], idx: Int):org.apache.spark.rdd.RDD[Array[Double]] = {
   val categories = rddx.map(r => r(idx)).distinct.zipWithIndex.collect.toMap
